@@ -388,8 +388,10 @@ class SystemDiagnosticsTool:
 
         self.update_disk_info()
     
+    def toggle_windows_processes(self):
+        self.update_processes()
+
     def create_processes_tab(self):
-        """Processes Tab"""
         tab = ttk.Frame(self.tab_control)
         self.tab_control.add(tab, text="Processes")
 
@@ -446,6 +448,15 @@ class SystemDiagnosticsTool:
             style="Accent.TButton"
         )
         end_btn.pack(side=LEFT, padx=5)
+
+        self.show_windows_processes = BooleanVar(value=True)
+        toggle_win_btn = ttk.Checkbutton(
+            btn_frame,
+            text=f"Show Default Windows Processes",
+            variable=self.show_windows_processes,
+            command=self.toggle_windows_processes
+        )
+        toggle_win_btn.pack(side=LEFT, padx=5)
         
         self.process_details_text = Text(
             tools_frame, 
@@ -460,7 +471,6 @@ class SystemDiagnosticsTool:
         self.update_processes()
     
     def create_tools_tab(self):
-        """Tools Tab"""
         tab = ttk.Frame(self.tab_control)
         self.tab_control.add(tab, text="Tools")
 
@@ -954,14 +964,85 @@ class SystemDiagnosticsTool:
     
     def update_processes(self):
         try:
-            # Clear previous data
             for item in self.processes_tree.get_children():
                 self.processes_tree.delete(item)
-            
-            # Get processes
+
+            windows_processes = [
+                # Core System Processes
+                "System",
+                "System Idle Process",
+                "smss.exe",          # Session Manager Subsystem
+                "csrss.exe",         # Client Server Runtime Process
+                "wininit.exe",       # Windows Initialization Process
+                "winlogon.exe",      # Windows Logon Application
+                "services.exe",      # Service Control Manager
+                "lsass.exe",         # Local Security Authority Subsystem
+                "svchost.exe",       # Service Host Process (multiple instances)
+                "dwm.exe",           # Desktop Window Manager
+                "explorer.exe",      # Windows Explorer
+                "taskhost.exe",      # Host Process for Windows Tasks
+                "taskhostw.exe",     # Host Process for Windows Tasks (alternate)
+                "taskeng.exe",       # Task Scheduler Engine
+                "rundll32.exe",      # Runs DLL functions
+                "dllhost.exe",       # COM+ DLL Host Process
+                "conhost.exe",       # Console Window Host
+                
+                # System Services
+                "spoolsv.exe",       # Print Spooler
+                "msmpeng.exe",       # Windows Defender Antivirus
+                "NisSrv.exe",        # Windows Defender Network Inspection
+                "SecurityHealthService.exe", # Windows Security Health Service
+                "WmiPrvSE.exe",      # WMI Provider Host
+                "SearchIndexer.exe", # Windows Search Indexer
+                "SearchFilterHost.exe",
+                "SearchProtocolHost.exe",
+                "audiodg.exe",       # Windows Audio Device Graph
+                "sihost.exe",        # Shell Infrastructure Host
+                "ctfmon.exe",        # Alternative User Input Text Input Processor
+                "RuntimeBroker.exe", # Runtime Broker (UWP app helper)
+                "CompPkgSrv.exe",    # Component Package Support Server
+                
+                # Network Related
+                "wlanext.exe",       # Windows Wireless LAN Extension
+                "dasHost.exe",       # Device Association Framework Provider Host
+                "dns.exe",           # DNS Server
+                "iphlpsvc.exe",      # IP Helper Service
+                
+                # Windows Subsystem
+                "fontdrvhost.exe",   # Font Driver Host
+                "lsm.exe",           # Local Session Manager
+                "mmc.exe",           # Microsoft Management Console
+                "mstsc.exe",         # Remote Desktop Connection
+                "rdpclip.exe",       # RDP Clipboard Monitor
+                
+                # Additional Common Processes
+                "backgroundTaskHost.exe",
+                "Registry",          # Windows Registry
+                "Memory Compression",
+                "MoUsoCoreWorker.exe", # Windows Update Standalone Installer
+                "usocoreworker.exe", # Update Session Orchestrator
+                "ApplicationFrameHost.exe", # UWP Application Frame Host
+                "StartMenuExperienceHost.exe",
+                "ShellExperienceHost.exe",
+                "LockApp.exe",
+                "SettingSyncHost.exe",
+                "PhoneExperienceHost.exe",
+                "GameBarPresenceWriter.exe",
+                "TextInputHost.exe",
+                "Calculator.exe",     # Windows Calculator
+                "MicrosoftEdgeCP.exe",# Microsoft Edge Content Process
+                "browser_broker.exe", # Microsoft Edge Browser Broker
+                "Widgets.exe",        # Windows Widgets
+                "WidgetService.exe",
+            ]
+
             processes = []
             for proc in psutil.process_iter(['pid', 'name', 'status', 'cpu_percent', 'memory_info', 'username']):
                 try:
+                    if (not getattr(self, 'show_windows_processes', True).get() and 
+                        proc.info['name'] in windows_processes):
+                        continue
+                        
                     processes.append((
                         proc.info['pid'],
                         proc.info['name'],
